@@ -92,8 +92,9 @@ class AWSOpenTelemac(Batch):
     self.data.delete(id)
   
   def AWS(self,id,cas=None,download=True,**kwargs):
+    
     if cas:self.uploadFromCas(id,cas,**kwargs)
-      
+    return  
     _,status = super().AWS(id,**kwargs)
     item=self.get(id)
     if download and status=="SUCCEEDED":
@@ -101,7 +102,7 @@ class AWSOpenTelemac(Batch):
       if output:return self.download(output)
     return item
 
-  def run(self,id,api=False):
+  def run(self,id,api=False,overwrite=False):
     super().update(id,status="RUNNING")
     try:
       item     = self.get(id)
@@ -116,9 +117,9 @@ class AWSOpenTelemac(Batch):
         value=study.values[key]
         if isinstance(value,list):
           # FORTRAN FILES
-          study.values[key]=[self.getRel(id,self.data.download(_value)) for _value in value]
+          study.values[key]=[self.getRel(id,self.data.download(_value,overwrite=overwrite)) for _value in value]
         else:
-          study.values[key]=self.getRel(id,self.data.download(value))
+          study.values[key]=self.getRel(id,self.data.download(value,overwrite=overwrite))
       
       casPath = join(self.CacheLocation,os.path.dirname(id),"temp.cas")
       
@@ -128,7 +129,8 @@ class AWSOpenTelemac(Batch):
       CPUs=os.environ.get("AWS_CPU",1)
       currentDirectory=os.getcwd()
       if api:
-        shutil.copy2('runapi.py', join(self.CacheLocation,os.path.dirname(id),"runapi.py")) 
+        runapi=os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'runapi.py')
+        shutil.copy2(runapi, join(self.CacheLocation,os.path.dirname(id),"runapi.py")) 
         os.chdir(os.path.dirname(casPath))
         print('mpirun --allow-run-as-root -n {} python runapi.py {} {}'.format(CPUs,id,module))
         subprocess.call('mpirun --allow-run-as-root -n {} python runapi.py {} {}'.format(CPUs,id,module),shell=True)

@@ -95,6 +95,8 @@ class S3(object):
   def download(self,Key,progress=True,overwrite=False):
     filepath=self._getCachePath(Key)
     folder = os.path.dirname(filepath)
+    if os.path.exists(filepath) and not overwrite:return filepath
+    
     if not os.path.exists(folder): os.makedirs(folder,exist_ok=True)
     if progress:
       file_object = self.s3.get_object(Bucket=self.BucketName, Key=Key)

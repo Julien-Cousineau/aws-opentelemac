@@ -41,17 +41,24 @@ def run():
   id   = args.id
   module   = args.module
   
-  study = modules[module]("temp.cas", user_fortran='user_fortran',comm=comm, stdout=0,recompile=True)
+  recompile=None
+  if rank==0:
+    api=AWSOpenTelemac()
+    item=api.get(id)
+    keywords=item.get("keywords")
+    recompile=bool(keywords.get("FORTRAN FILE",False))
+    
+  recompile = comm.bcast(recompile, root=0)
+  user_fortran='user_fortran' if recompile else None
+  
+  study = modules[module]("temp.cas", user_fortran=user_fortran,comm=comm, stdout=0,recompile=recompile)
   study.set_case()
   study.init_state_default()
   
   igprintout = study.cas.values.get("GRAPHIC PRINTOUT PERIOD",study.cas.dico.data["GRAPHIC PRINTOUT PERIOD"])
   ntimesteps = study.get("MODEL.NTIMESTEPS")
   
-  if rank==0:
-    api=AWSOpenTelemac()
-    api.updateProgress(id,iframe=0,nframe=int(ntimesteps/igprintout))
-  
+  if rank==0:api.updateProgress(id,iframe=0,nframe=int(ntimesteps/igprintout))
   for itime in range(0,ntimesteps):
     study.run_one_time_step()
     itime1=itime+1

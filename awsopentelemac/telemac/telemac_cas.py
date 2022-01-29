@@ -37,7 +37,7 @@ class TelemacCas(object):
     Class to hanlde a Telemac-mascaret steering file
     """
 
-    def __init__(self, module,file_name=None):
+    def __init__(self, module,file_name=None,relPath=None):
         """
         Init of the class
 
@@ -50,6 +50,7 @@ class TelemacCas(object):
         self.lang = 'en'
         self.in_files = {}
         self.out_files = {}
+        self.relPath=relPath
         self.dico = TelemacDico(get_dico(module))
         if file_name is not None:
             self.file_name = file_name
@@ -66,6 +67,7 @@ class TelemacCas(object):
         self.values=values
         self._check_choix()
         self._set_io_files()
+        return self
     
     def _check(self):
         # Getting language info
@@ -260,12 +262,15 @@ class TelemacCas(object):
     
     def _getFilePath(self,value):
       value = value.strip("'")
+      
       if not path.exists(value):
         value = path.join(path.dirname(self.file_name),value)
-        if not path.exists(value):raise TelemacException("File does not exist: {}".format(value))  
+        if not path.exists(value):raise TelemacException("File does not exist: {}".format(value))
+        if self.relPath:value=path.relpath(value,self.relPath)
       if path.isdir(value):
         for root, dirs, files in walk(value):
           value=[path.join(root, name) for name in files]
+          if self.relPath:value=[path.relpath(v,self.relPath) for v in value]
       return value              
     
     def getFilePath(self,value):
@@ -324,7 +329,7 @@ class TelemacCas(object):
                         string = "{} =\n{}\n".format(real_key,
                                                      format72(repr(val)))
                         f.write(string)
-
+        return cas_file
     
     
     def __str__(self):
