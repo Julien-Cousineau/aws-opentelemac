@@ -129,7 +129,7 @@ class AWSOpenTelemac(Batch):
       CPUs=os.environ.get("AWS_CPU",1)
       currentDirectory=os.getcwd()
       if api:
-        runapi=os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))),'runapi.py')
+        runapi=os.path.join(os.path.dirname(os.path.realpath(__file__)),'runapi.py')
         shutil.copy2(runapi, join(self.CacheLocation,os.path.dirname(id),"runapi.py")) 
         os.chdir(os.path.dirname(casPath))
         print('mpirun --allow-run-as-root -n {} python runapi.py {} {}'.format(CPUs,id,module))
